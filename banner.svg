@@ -1,0 +1,101 @@
+<svg width="100%" viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+<style>
+  .bg { fill: #1a2744; }
+  .grid { stroke: #2a3d66; stroke-width: 0.5; }
+  .node-box { rx: 5; stroke-width: 1.2; }
+  .lbl { font-family: monospace; font-size: 11px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .lvl-lbl { font-family: monospace; font-size: 10px; fill: #4a6088; text-anchor: start; dominant-baseline: central; }
+  .edge { stroke-width: 1.4; fill: none; marker-end: url(#arr); }
+  .title-main { font-family: monospace; font-size: 26px; font-weight: 700; fill: #e8f0ff; letter-spacing: 3px; }
+  .title-sub  { font-family: monospace; font-size: 10px; fill: #6a88bb; letter-spacing: 2px; }
+  .author     { font-family: monospace; font-size: 9px; fill: #4a6088; }
+</style>
+<rect width="680" height="220" class="bg"/>
+<line x1="0" y1="55"  x2="680" y2="55"  class="grid"/>
+<line x1="0" y1="95"  x2="680" y2="95"  class="grid"/>
+<line x1="0" y1="135" x2="680" y2="135" class="grid"/>
+<line x1="0" y1="175" x2="680" y2="175" class="grid"/>
+<text x="14" y="55"  class="lvl-lbl">L3</text>
+<text x="14" y="95"  class="lvl-lbl">L2</text>
+<text x="14" y="135" class="lvl-lbl">L1</text>
+<text x="14" y="175" class="lvl-lbl">L0</text>
+<rect x="38" y="42" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="60" y="55" class="lbl" fill="#4a6088">-inf</text>
+<rect x="38" y="82" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="60" y="95" class="lbl" fill="#4a6088">-inf</text>
+<rect x="38" y="122" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="60" y="135" class="lbl" fill="#4a6088">-inf</text>
+<rect x="38" y="162" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="60" y="175" class="lbl" fill="#4a6088">-inf</text>
+<rect x="110" y="162" width="44" height="26" rx="4" fill="#162438" stroke="#2a4a70"/>
+<text x="132" y="175" class="lbl" fill="#5a8ab0">12</text>
+<rect x="182" y="122" width="44" height="26" rx="4" fill="#162438" stroke="#2a4a70"/>
+<text x="204" y="135" class="lbl" fill="#5a8ab0">25</text>
+<rect x="182" y="162" width="44" height="26" rx="4" fill="#162438" stroke="#2a4a70"/>
+<text x="204" y="175" class="lbl" fill="#5a8ab0">25</text>
+<rect x="254" y="42" width="44" height="26" rx="4" fill="#1e1040" stroke="#7c6ef0" stroke-width="1.8"/>
+<text x="276" y="55" class="lbl" fill="#a89cf8">37</text>
+<rect x="254" y="82" width="44" height="26" rx="4" fill="#1e1040" stroke="#7c6ef0" stroke-width="1.8"/>
+<text x="276" y="95" class="lbl" fill="#a89cf8">37</text>
+<rect x="254" y="122" width="44" height="26" rx="4" fill="#1e1040" stroke="#7c6ef0" stroke-width="1.8"/>
+<text x="276" y="135" class="lbl" fill="#a89cf8">37</text>
+<rect x="254" y="162" width="44" height="26" rx="4" fill="#1e1040" stroke="#7c6ef0" stroke-width="1.8"/>
+<text x="276" y="175" class="lbl" fill="#a89cf8">37</text>
+<rect x="326" y="82"  width="44" height="26" rx="4" fill="#162030" stroke="#354a66"/>
+<text x="348" y="95"  class="lbl" fill="#4a6888">51</text>
+<rect x="326" y="122" width="44" height="26" rx="4" fill="#162030" stroke="#354a66"/>
+<text x="348" y="135" class="lbl" fill="#4a6888">51</text>
+<rect x="326" y="162" width="44" height="26" rx="4" fill="#162030" stroke="#354a66"/>
+<text x="348" y="175" class="lbl" fill="#4a6888">51</text>
+<rect x="398" y="122" width="44" height="26" rx="4" fill="#1e1200" stroke="#c07020" stroke-width="1.6"/>
+<text x="420" y="135" class="lbl" fill="#d4900a">63</text>
+<rect x="398" y="162" width="44" height="26" rx="4" fill="#1e1200" stroke="#c07020" stroke-width="1.6"/>
+<text x="420" y="175" class="lbl" fill="#d4900a">63</text>
+<rect x="470" y="162" width="44" height="26" rx="4" fill="#0d2010" stroke="#28a060" stroke-width="1.8"/>
+<text x="492" y="175" class="lbl" fill="#4cd088">78</text>
+<rect x="542" y="42"  width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="564" y="55"  class="lbl" fill="#4a6088">+inf</text>
+<rect x="542" y="82"  width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="564" y="95"  class="lbl" fill="#4a6088">+inf</text>
+<rect x="542" y="122" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="564" y="135" class="lbl" fill="#4a6088">+inf</text>
+<rect x="542" y="162" width="44" height="26" rx="4" fill="#1f2f50" stroke="#3a5080"/>
+<text x="564" y="175" class="lbl" fill="#4a6088">+inf</text>
+<line x1="60" y1="68" x2="60" y2="82" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="60" y1="108" x2="60" y2="122" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="60" y1="148" x2="60" y2="162" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="204" y1="148" x2="204" y2="162" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="276" y1="68" x2="276" y2="82" stroke="#5040c0" stroke-width="0.8"/>
+<line x1="276" y1="108" x2="276" y2="122" stroke="#5040c0" stroke-width="0.8"/>
+<line x1="276" y1="148" x2="276" y2="162" stroke="#5040c0" stroke-width="0.8"/>
+<line x1="348" y1="108" x2="348" y2="122" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="348" y1="148" x2="348" y2="162" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="420" y1="148" x2="420" y2="162" stroke="#704010" stroke-width="0.8"/>
+<line x1="564" y1="68" x2="564" y2="82" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="564" y1="108" x2="564" y2="122" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="564" y1="148" x2="564" y2="162" stroke="#2a3d66" stroke-width="0.8"/>
+<line x1="82" y1="55" x2="254" y2="55" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="298" y1="55" x2="542" y2="55" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="82" y1="95" x2="254" y2="95" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="298" y1="95" x2="326" y2="95" stroke="#5040c0" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="370" y1="95" x2="542" y2="95" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="82" y1="135" x2="182" y2="135" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="226" y1="135" x2="254" y2="135" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="298" y1="135" x2="326" y2="135" stroke="#5040c0" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="370" y1="135" x2="398" y2="135" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="442" y1="135" x2="542" y2="135" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="82" y1="175" x2="110" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="154" y1="175" x2="182" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="226" y1="175" x2="254" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="298" y1="175" x2="326" y2="175" stroke="#5040c0" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="370" y1="175" x2="398" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="442" y1="175" x2="470" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<line x1="514" y1="175" x2="542" y2="175" stroke="#4a5580" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<text x="340" y="15" class="title-sub" text-anchor="middle">structuri de date probabilistice</text>
+<text x="340" y="207" class="author" text-anchor="middle">Lect. Dr. Stefan Popescu - Material didactic</text>
+</svg>

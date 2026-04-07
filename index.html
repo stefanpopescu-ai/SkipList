@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vizualizator Skip List</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef5;
+    --border: #c8d6e5;
+    --accent: #2563eb;
+    --accent2: #dc2626;
+    --accent3: #16a34a;
+    --text: #1e3a5f;
+    --text-dim: #7a95b0;
+    --node-bg: #dbeafe;
+    --node-border: #93c5fd;
+    --head-color: #dc2626;
+    --sentinel-color: #94a3b8;
+    --glow: 0 0 12px rgba(37,99,235,0.25);
+    --glow2: 0 0 12px rgba(220,38,38,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(37,99,235,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,235,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(160,180,210,0.25) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .logo h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo .subtitle {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 24px;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: none;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .ctrl-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .ctrl-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .ctrl-card.insert::before { background: var(--accent3); }
+  .ctrl-card.search::before { background: var(--accent); }
+  .ctrl-card.delete::before { background: var(--accent2); }
+
+  .ctrl-card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .ctrl-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+  }
+
+  .ctrl-card.insert .ctrl-title { color: var(--accent3); }
+  .ctrl-card.search .ctrl-title { color: var(--accent); }
+  .ctrl-card.delete .ctrl-title { color: var(--accent2); }
+
+  .ctrl-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.12);
+  }
+
+  button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .btn-insert {
+    background: rgba(127,255,107,0.12);
+    color: var(--accent3);
+    border: 1px solid rgba(127,255,107,0.25);
+  }
+
+  .btn-insert:hover {
+    background: rgba(127,255,107,0.22);
+    box-shadow: 0 0 14px rgba(127,255,107,0.3);
+  }
+
+  .btn-search {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.25);
+  }
+
+  .btn-search:hover {
+    background: rgba(0,212,255,0.2);
+    box-shadow: var(--glow);
+  }
+
+  .btn-delete {
+    background: rgba(255,107,53,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(255,107,53,0.25);
+  }
+
+  .btn-delete:hover {
+    background: rgba(255,107,53,0.2);
+    box-shadow: var(--glow2);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.72rem;
+  }
+
+  /* ── Extras row ── */
+  .extras {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .extras-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+  }
+
+  /* ── Animation bar ── */
+  .anim-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .anim-mode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Toggle switch */
+  .toggle-wrap {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .toggle-wrap input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 20px;
+    transition: 0.2s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+
+  .toggle-wrap input:checked + .toggle-slider { background: var(--accent); }
+  .toggle-wrap input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  .btn-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--accent);
+    color: white;
+    box-shadow: var(--glow);
+  }
+
+  .btn-next:disabled {
+    background: var(--border);
+    color: var(--text-dim);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .btn-next:not(:disabled):hover {
+    filter: brightness(1.15);
+  }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .speed-row label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  input[type="range"] {
+    width: 90px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* ── Canvas area ── */
+  .canvas-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .canvas-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--surface2);
+  }
+
+  .canvas-scroll::-webkit-scrollbar { height: 6px; }
+  .canvas-scroll::-webkit-scrollbar-track { background: var(--surface2); }
+  .canvas-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .canvas-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .canvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .canvas-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+  }
+
+  .canvas-hints {
+    display: flex;
+    gap: 16px;
+  }
+
+  .hint {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.62rem;
+    color: var(--text-dim);
+  }
+
+  .hint-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  #skipCanvas {
+    display: block;
+    cursor: default;
+    min-width: 100%;
+  }
+
+  /* ── Log ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+
+  .log-panel, .info-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+  }
+
+  .log-body {
+    height: 180px;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-track { background: transparent; }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+
+  .log-time { color: var(--text-dim); flex-shrink: 0; }
+
+  .log-insert { color: #16a34a; }
+  .log-search { color: #2563eb; }
+  .log-delete { color: #dc2626; }
+  .log-info   { color: #7a95b0; }
+  .log-found  { color: #16a34a; }
+  .log-notfound { color: #dc2626; }
+
+  /* ── Info Panel ── */
+  .info-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+
+  .info-key {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .info-val {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .prob-slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+
+  .prob-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 460px;
+    width: 90%;
+    transform: scale(0.95);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.open .modal { transform: scale(1); }
+
+  .modal h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+
+  .modal p {
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .modal .kv { color: var(--accent2); font-weight: 600; }
+  .modal .modal-close {
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  /* ── Animations ── */
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(0,212,255,0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(0,212,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+  }
+
+  @media (max-width: 900px) {
+    .controls { grid-template-columns: 1fr; }
+    .bottom-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <h1>SKIP LIST</h1>
+      <div class="subtitle">Vizualizator de Structuri de Date Probabilistice</div>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <div class="stat-val" id="statNoduri">0</div>
+        <div class="stat-label">Noduri</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statNiveluri">0</div>
+        <div class="stat-label">Niveluri</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statOps">0</div>
+        <div class="stat-label">Operații</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-card insert">
+      <div class="ctrl-title">▲ Inserare</div>
+      <div class="ctrl-row">
+        <input type="number" id="insertVal" placeholder="valoare" min="-999" max="9999"/>
+        <button class="btn-insert" onclick="doInsert()">INSEREAZĂ</button>
+      </div>
+      <div class="ctrl-row" style="flex-wrap:wrap; gap:6px;">
+        <button class="btn-insert btn-sm" onclick="insertRandom()">Aleatoriu</button>
+        <button class="btn-insert btn-sm" onclick="insertBulk()">Lot ×10</button>
+        <button class="btn-insert btn-sm" onclick="insertSorted()">Sortat ×10</button>
+      </div>
+    </div>
+
+    <div class="ctrl-card search">
+      <div class="ctrl-title">◎ Căutare</div>
+      <div class="ctrl-row">
+        <input type="number" id="searchVal" placeholder="valoare" min="-999" max="9999"/>
+        <button class="btn-search" onclick="doSearch()">CAUTĂ</button>
+      </div>
+      <div style="font-size:0.7rem; color: var(--text-dim);">
+        Evidențiază calea de căutare pe canvas
+      </div>
+    </div>
+
+    <div class="ctrl-card delete">
+      <div class="ctrl-title">✕ Ștergere</div>
+      <div class="ctrl-row">
+        <input type="number" id="deleteVal" placeholder="valoare" min="-999" max="9999"/>
+        <button class="btn-delete" onclick="doDelete()">ȘTERGE</button>
+      </div>
+      <div class="ctrl-row">
+        <button class="btn-delete btn-sm" onclick="clearAll()">Șterge Tot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extras -->
+  <div class="extras">
+    <span class="extras-label">Instrumente:</span>
+    <button class="btn-ghost btn-sm" onclick="showInfo()">? Info Algoritm</button>
+    <button class="btn-ghost btn-sm" onclick="exportJSON()">⬇ Exportă JSON</button>
+    <button class="btn-ghost btn-sm" onclick="importJSON()">⬆ Importă JSON</button>
+    <button class="btn-ghost btn-sm" onclick="exportPNG()">⬇ Exportă PNG</button>
+    <button class="btn-ghost btn-sm" onclick="exportTikZ()">⬇ Exportă TikZ</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)"/>
+  </div>
+
+  <!-- Animation controls bar -->
+  <div class="anim-bar">
+    <div class="anim-mode">
+      <span class="extras-label">Mod animație:</span>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="stepModeToggle" onchange="toggleStepMode(this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>
+      <span id="stepModeLabel" style="font-size:0.72rem; color:var(--text-dim);">Automat</span>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="stepNext()" disabled>▶ Următor</button>
+    <button class="btn-ghost btn-sm" id="btnReset" onclick="resetAnim()" style="display:none">↺ Reset</button>
+    <div class="speed-row" id="speedRow">
+      <label>Viteză animație:</label>
+      <input type="range" id="speedRange" min="1" max="5" value="3" oninput="updateSpeed(this.value)"/>
+      <span id="speedLabel" style="font-size:0.7rem; color:var(--accent); width:30px;">3×</span>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrapper">
+    <div class="canvas-header">
+      <span class="canvas-title">Vizualizare Structură</span>
+      <div class="canvas-hints">
+        <div class="hint"><div class="hint-dot" style="background:var(--accent2)"></div>Santinelă (−∞ / +∞)</div>
+        <div class="hint"><div class="hint-dot" style="background:var(--accent)"></div>Nod de Date</div>
+        <div class="hint"><div class="hint-dot" style="background:#6366f1"></div>Activ</div>
+        <div class="hint"><div class="hint-dot" style="background:#a5b4fc"></div>Vizitat</div>
+        <div class="hint"><div class="hint-dot" style="background:#d97706"></div>Blocat (peek)</div>
+        <div class="hint"><div class="hint-dot" style="background:#059669"></div>Nod curent</div>
+        <div class="hint"><div class="hint-dot" style="background:#16a34a"></div>Găsit / Inserat</div>
+      </div>
+    </div>
+    <div class="canvas-scroll"><canvas id="skipCanvas"></canvas></div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom-row">
+    <div class="log-panel">
+      <div class="panel-header">
+        <span class="panel-title">Jurnal Operații</span>
+        <button class="btn-ghost btn-sm" onclick="clearLog()">Șterge</button>
+      </div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+
+    <div class="info-panel">
+      <div class="panel-header">
+        <span class="panel-title">Parametri</span>
+      </div>
+      <div class="info-body">
+        <div class="prob-slider-row">
+          <div class="prob-row-top">
+            <span class="info-key">Probabilitate Promovare</span>
+            <span class="info-val" id="probLabel">0.50</span>
+          </div>
+          <input type="range" id="probRange" min="10" max="90" value="50" step="5" style="width:100%" oninput="updateProb(this.value)"/>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Max Niveluri</span>
+          <span class="info-val" id="infoMaxNiveluri">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Current Niveluri</span>
+          <span class="info-val" id="infoCurNiveluri">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Total Noduri</span>
+          <span class="info-val" id="infoNoduri">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Comparații Ultima Op.</span>
+          <span class="info-val" id="infoComps">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Skip List — Algoritm</h3>
+    <p>Un <span class="kv">Skip List</span> este o structură de date probabilistică ce permite timp mediu O(log n) pentru căutare, inserare și ștergere — similar cu un BST echilibrat, dar mai simplu de implementat.</p>
+    <p><span class="kv">Structură:</span> Mai multe niveluri de liste înlănțuite. Nivelul 0 este lista completă sortată. Nivelurile superioare conțin mai puține elemente (benzi rapide).</p>
+    <p><span class="kv">Inserare:</span> Se inserează la nivelul 0, apoi se aruncă o monedă pentru promovare. Promovarea continuă până la pajură <em>sau</em> până la crearea unui nivel nou (cel mult un nivel nou per inserare).</p>
+    <p><span class="kv">Căutare:</span> Se pornește de la nivelul superior și se merge la dreapta; se coboară un nivel când valoarea următoare este prea mare. O(log n) așteptat.</p>
+    <p><span class="kv">Ștergere:</span> Se găsește nodul pe toate nivelurile și se refac pointerii înainte.</p>
+    <button class="btn-ghost modal-close" onclick="closeModal()">Închide</button>
+  </div>
+</div>
+
+<!-- TikZ Modal -->
+<div class="modal-overlay" id="tikzModalOverlay">
+  <div class="modal" style="max-width:680px;">
+    <h3>Export TikZ — LaTeX</h3>
+    <p style="margin-bottom:8px; color:var(--text-dim); font-size:0.72rem;">
+      Copiază codul de mai jos și include-l într-un document LaTeX cu pachetele <span class="kv">tikz</span> și <span class="kv">amsmath</span>.
+    </p>
+    <textarea id="tikzCode" readonly
+      style="width:100%; height:320px; background:var(--bg); border:1px solid var(--border);
+             border-radius:6px; color:var(--accent3); font-family:'JetBrains Mono',monospace;
+             font-size:0.72rem; padding:12px; resize:vertical; outline:none; line-height:1.5;">
+    </textarea>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn-search" style="flex:1" onclick="copyTikZ()">Copiază în clipboard</button>
+      <button class="btn-insert" style="flex:1" onclick="downloadTikZ()">⬇ Descarcă .tex</button>
+      <button class="btn-ghost modal-close" style="flex:1" onclick="closeTikZModal()">Închide</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ════════════════════════════════════════════════
+//  SKIP LIST IMPLEMENTATION
+// ════════════════════════════════════════════════
+
+const NEG_INF = -Infinity;
+const POS_INF =  Infinity;
+
+class SkipNode {
+  constructor(val, levels) {
+    this.val = val;
+    this.forward = new Array(levels).fill(null); // forward[i] = next node at level i
+  }
+}
+
+class SkipList {
+  constructor(p = 0.5) {
+    this.p = p;
+    this.maxLevel = 0;  // current highest level index (0-based)
+    this.head = new SkipNode(NEG_INF, 1);
+    this.tail = new SkipNode(POS_INF, 1);
+    this.head.forward[0] = this.tail;
+    this.size = 0;
+  }
+
+  _randomLevel() {
+    // Promote at most until a new level would be created.
+    // That means we can go up to maxLevel+1 (creating one new level), then stop.
+    let lvl = 0;
+    while (Math.random() < this.p) {
+      lvl++;
+      if (lvl > this.maxLevel) {
+        // This would be a brand-new level — stop here (we include this level)
+        break;
+      }
+    }
+    return lvl;
+  }
+
+  _ensureNiveluri(newLevel) {
+    if (newLevel > this.maxLevel) {
+      const diff = newLevel - this.maxLevel;
+      for (let i = 0; i < diff; i++) {
+        this.head.forward.push(this.tail);
+        this.tail.forward.push(null); // tail's forward is always null
+      }
+      this.maxLevel = newLevel;
+    }
+  }
+
+  // Returns { found: bool, path: [{nodeRef, level, type}], comparisons: int }
+  // types: 'move' = stepped here while scanning right
+  //        'cur'  = current position when we drop a level (largest node < val so far)
+  //        'peek' = the first node >= val we bump into before dropping
+  search(val) {
+    let cur = this.head;
+    const path = [];
+    let comparisons = 0;
+
+    for (let lvl = this.maxLevel; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].val < val) {
+        comparisons++;
+        cur = cur.forward[lvl];
+        path.push({ nodeRef: cur, level: lvl, type: 'move' });
+      }
+      // The blocker (first node >= val): peek highlight at current level
+      const blocker = cur.forward[lvl];
+      if (blocker && blocker.val !== POS_INF && blocker.val !== val) {
+        comparisons++;
+        path.push({ nodeRef: blocker, level: lvl, type: 'peek' });
+      }
+      // We are about to drop from lvl to lvl-1.
+      // Mark cur at BOTH the current level AND the level below, so the drop is visible.
+      if (cur !== sl.head && cur.val !== POS_INF) {
+        path.push({ nodeRef: cur, level: lvl, type: 'cur' });
+        if (lvl > 0) {
+          path.push({ nodeRef: cur, level: lvl - 1, type: 'cur' });
+        }
+      }
+    }
+
+    const candidate = cur.forward[0];
+    const found = !!(candidate && candidate.val === val && candidate.val !== POS_INF);
+    return { found, node: found ? candidate : null, path, comparisons };
+  }
+
+  // Returns { inserted: bool, level: int, path, newNodeNiveluri }
+  insert(val) {
+    const update = new Array(this.maxLevel + 1).fill(null);
+    let cur = this.head;
+    const path = [];
+    let comparisons = 0;
+
+    for (let lvl = this.maxLevel; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].val < val) {
+        comparisons++;
+        cur = cur.forward[lvl];
+        path.push({ nodeRef: cur, level: lvl, type: 'move' });
+      }
+      if (cur.forward[lvl] && cur.forward[lvl].val !== POS_INF) {
+        comparisons++;
+        path.push({ nodeRef: cur.forward[lvl], level: lvl, type: 'peek' });
+      }
+      update[lvl] = cur;
+    }
+
+    // Check for duplicate
+    if (cur.forward[0] && cur.forward[0].val === val) {
+      return { inserted: false, path, comparisons };
+    }
+
+    const newLevel = this._randomLevel();
+    if (newLevel > this.maxLevel) {
+      this._ensureNiveluri(newLevel);
+      for (let lvl = this.maxLevel; lvl > newLevel; lvl--) {
+        update[lvl] = this.head;
+      }
+      update[newLevel] = this.head;
+    }
+
+    const newNode = new SkipNode(val, newLevel + 1);
+    for (let lvl = 0; lvl <= newLevel; lvl++) {
+      if (!update[lvl]) update[lvl] = this.head;
+      newNode.forward[lvl] = update[lvl].forward[lvl];
+      update[lvl].forward[lvl] = newNode;
+    }
+
+    this.size++;
+    return { inserted: true, node: newNode, level: newLevel, path, comparisons };
+  }
+
+  // Returns { deleted: bool, path, comparisons }
+  delete(val) {
+    const update = new Array(this.maxLevel + 1).fill(null);
+    let cur = this.head;
+    const path = [];
+    let comparisons = 0;
+
+    for (let lvl = this.maxLevel; lvl >= 0; lvl--) {
+      while (cur.forward[lvl] && cur.forward[lvl].val < val) {
+        comparisons++;
+        cur = cur.forward[lvl];
+        path.push({ nodeRef: cur, level: lvl, type: 'move' });
+      }
+      if (cur.forward[lvl] && cur.forward[lvl].val !== POS_INF) {
+        comparisons++;
+        path.push({ nodeRef: cur.forward[lvl], level: lvl, type: 'peek' });
+      }
+      update[lvl] = cur;
+    }
+
+    const target = cur.forward[0];
+    if (!target || target.val !== val) {
+      return { deleted: false, path, comparisons };
+    }
+
+    for (let lvl = 0; lvl <= this.maxLevel; lvl++) {
+      if (update[lvl].forward[lvl] !== target) break;
+      update[lvl].forward[lvl] = target.forward[lvl];
+    }
+
+    // Shrink empty top levels
+    while (this.maxLevel > 0 && this.head.forward[this.maxLevel] === this.tail) {
+      this.head.forward.pop();
+      this.tail.forward.pop();
+      this.maxLevel--;
+    }
+
+    this.size--;
+    return { deleted: true, node: target, path, comparisons };
+  }
+
+  toArray() {
+    const arr = [];
+    let cur = this.head.forward[0];
+    while (cur && cur.val !== POS_INF) {
+      arr.push({ val: cur.val, levels: cur.forward.length });
+      cur = cur.forward[0];
+    }
+    return arr;
+  }
+
+  serialize() {
+    return {
+      p: this.p,
+      values: this.toArray().map(n => n.val)
+    };
+  }
+}
+
+// ════════════════════════════════════════════════
+//  APP STATE
+// ════════════════════════════════════════════════
+
+let sl = new SkipList(0.5);
+let opCount = 0;
+let animSpeed = 3;
+
+// Highlighted nodes for animations
+let highlightedPath = [];   // [{nodeRef, level, type}]
+let highlightedResult = null;
+let highlightType = 'search';
+let animTimer = null;
+let pathStep = 0;
+
+// Step-by-step mode
+let stepMode = false;
+let pendingPath = [];
+let pendingResult = null;
+let pendingType = null;
+let animDone = false;
+
+function toggleStepMode(on) {
+  stepMode = on;
+  document.getElementById('stepModeLabel').textContent = on ? 'Pas cu pas' : 'Automat';
+  document.getElementById('speedRow').style.display = on ? 'none' : 'flex';
+  if (!on) {
+    document.getElementById('btnNext').disabled = true;
+    document.getElementById('btnReset').style.display = 'none';
+    resetAnim();
+  }
+}
+
+function stepNext() {
+  if (pathStep < pendingPath.length) {
+    highlightedPath.push(pendingPath[pathStep]);
+    pathStep++;
+    draw();
+    if (pathStep === pendingPath.length) {
+      // Show result
+      highlightedResult = pendingResult;
+      animDone = true;
+      document.getElementById('btnNext').textContent = '↺ Sfârșit';
+      document.getElementById('btnNext').disabled = true;
+      document.getElementById('btnReset').style.display = 'inline-block';
+      draw();
+    }
+  }
+}
+
+function resetAnim() {
+  if (animTimer) clearTimeout(animTimer);
+  highlightedPath = [];
+  highlightedResult = null;
+  pendingPath = [];
+  pendingResult = null;
+  pathStep = 0;
+  animDone = false;
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('btnNext').textContent = '▶ Următor';
+  document.getElementById('btnReset').style.display = 'none';
+  draw();
+}
+
+// ════════════════════════════════════════════════
+//  CANVAS RENDERING
+// ════════════════════════════════════════════════
+
+const canvas = document.getElementById('skipCanvas');
+const ctx = canvas.getContext('2d');
+
+const NODE_W = 52;
+const NODE_H = 34;
+const NODE_GAP = 14;
+const LEVEL_H = 56;
+const PAD_X = 40;
+const PAD_Y = 28;
+
+function levelColor(lvl, total) {
+  const t = total <= 1 ? 0 : lvl / (total - 1);
+  // light theme: level 0 = steel blue, top = indigo
+  const r = Math.round(37  + t * 62);
+  const g = Math.round(99  - t * 40);
+  const b = Math.round(235 - t * 30);
+  return `rgb(${r},${g},${b})`;
+}
+
+function resize() {
+  const scroller = canvas.parentElement;        // .canvas-scroll
+  const wrapperW = scroller.clientWidth;
+
+  // Node count = size + 2 sentinels
+  const nodeCount = sl.size + 2;
+  const needed = PAD_X * 2 + nodeCount * (NODE_W + NODE_GAP);
+  canvas.width = Math.max(wrapperW, needed);
+
+  const totalNiveluri = sl.maxLevel + 1;
+  const minH = 180;
+  canvas.height = Math.max(minH, PAD_Y * 2 + totalNiveluri * LEVEL_H + 30);
+}
+
+function draw() {
+  resize();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const totalNiveluri = sl.maxLevel + 1;
+  const nodes = collectNoduri();
+
+  // Background level bands
+  for (let lvl = 0; lvl < totalNiveluri; lvl++) {
+    const y = levelY(lvl, totalNiveluri);
+    ctx.fillStyle = lvl % 2 === 0 ? 'rgba(37,99,235,0.04)' : 'rgba(0,0,0,0.0)';
+    ctx.fillRect(0, y - LEVEL_H / 2, canvas.width, LEVEL_H);
+
+    // Level label
+    ctx.fillStyle = '#7a95b0';
+    ctx.font = '600 11px JetBrains Mono, monospace';
+    ctx.fillText(`L${lvl}`, 8, y + 5);
+  }
+
+  // Draw horizontal connections (arrows)
+  for (let lvl = 0; lvl < totalNiveluri; lvl++) {
+    const y = levelY(lvl, totalNiveluri);
+    const nodesAtLevel = nodes.filter(n => n.levels > lvl);
+    for (let i = 0; i < nodesAtLevel.length - 1; i++) {
+      const a = nodesAtLevel[i];
+      const b = nodesAtLevel[i + 1];
+      drawArrow(
+        a.x + NODE_W, y,
+        b.x,          y,
+        edgeColor(a, b, lvl), 1.5
+      );
+    }
+  }
+
+  // Draw nodes
+  for (const n of nodes) {
+    for (let lvl = 0; lvl < Math.min(n.levels, totalNiveluri); lvl++) {
+      drawNode(n, lvl, totalNiveluri);
+    }
+    // Draw vertical connectors between levels of the same node
+    if (n.levels > 1) {
+      for (let lvl = 0; lvl < Math.min(n.levels, totalNiveluri) - 1; lvl++) {
+        const y1 = levelY(lvl, totalNiveluri);
+        const y2 = levelY(lvl + 1, totalNiveluri);
+        const cx2 = n.x + NODE_W / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx2, y1 - NODE_H / 2);
+        ctx.lineTo(cx2, y2 + NODE_H / 2);
+        ctx.strokeStyle = 'rgba(37,99,235,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  updateStats();
+}
+
+function collectNoduri() {
+  const totalNiveluri = sl.maxLevel + 1;
+  const allNoduri = [];
+  let cur = sl.head;
+  let idx = 0;
+
+  while (cur) {
+    const x = PAD_X + idx * (NODE_W + NODE_GAP);
+    allNoduri.push({
+      nodeRef: cur,
+      val: cur.val,
+      levels: Math.min(cur.forward.length, totalNiveluri),
+      x, idx
+    });
+    cur = cur.forward[0];
+    idx++;
+  }
+
+  return allNoduri;
+}
+
+function levelY(lvl, totalNiveluri) {
+  // Level 0 at bottom
+  return PAD_Y + (totalNiveluri - 1 - lvl) * LEVEL_H + LEVEL_H / 2;
+}
+
+function nodeState(n, lvl) {
+  if (n.val === NEG_INF || n.val === POS_INF) return 'sentinel';
+  if (highlightedResult !== null && n.nodeRef === highlightedResult) return 'result';
+  if (highlightedPath.length === 0) return 'normal';
+
+  // The very last entry pushed is the "active" step — gets full color
+  const last = highlightedPath[highlightedPath.length - 1];
+  if (last.nodeRef === n.nodeRef && last.level === lvl) return last.type;
+
+  // Any earlier entry that matches this cell → visited (dim trail)
+  for (const p of highlightedPath) {
+    if (p.nodeRef === n.nodeRef && p.level === lvl) return 'visited';
+  }
+
+  return 'normal';
+}
+
+function drawNode(n, lvl, totalNiveluri) {
+  const y = levelY(lvl, totalNiveluri);
+  const x = n.x;
+  const state = nodeState(n, lvl);
+
+  const isSentinel = n.val === NEG_INF || n.val === POS_INF;
+
+  let fillColor, strokeColor, textColor, glowColor;
+
+  if (isSentinel) {
+    fillColor = '#f1f5f9';
+    strokeColor = '#94a3b8';
+    textColor = '#64748b';
+    glowColor = null;
+  } else if (state === 'result') {
+    const c = highlightType === 'delete' ? '#dc2626' : '#16a34a';
+    fillColor = `${c}18`;
+    strokeColor = c;
+    textColor = c;
+    glowColor = c;
+  } else if (state === 'move') {
+    fillColor = '#eef3ff';
+    strokeColor = '#6366f1';
+    textColor = '#312e81';
+    glowColor = '#818cf8';
+  } else if (state === 'cur') {
+    fillColor = '#ecfdf5';
+    strokeColor = '#059669';
+    textColor = '#064e3b';
+    glowColor = '#34d399';
+  } else if (state === 'peek') {
+    fillColor = '#fff7ed';
+    strokeColor = '#d97706';
+    textColor = '#78350f';
+    glowColor = '#fbbf24';
+  } else if (state === 'visited') {
+    // Dim trail — clearly different from active, clearly different from normal
+    fillColor = '#edf2fb';
+    strokeColor = '#a5b4fc';
+    textColor = '#6b7dbf';
+    glowColor = null;
+  } else {
+    fillColor = '#ffffff';
+    strokeColor = levelColor(lvl, totalNiveluri);
+    textColor = '#1e3a5f';
+    glowColor = null;
+  }
+
+  // Shadow/glow
+  if (glowColor) {
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 14;
+  }
+
+  // Box
+  ctx.fillStyle = fillColor;
+  roundRect(x, y - NODE_H / 2, NODE_W, NODE_H, 5);
+  ctx.fill();
+
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = state === 'normal' ? 1 : 1.8;
+  roundRect(x, y - NODE_H / 2, NODE_W, NODE_H, 5);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+
+  // Text
+  ctx.fillStyle = textColor;
+  ctx.font = `${isSentinel ? '500' : '600'} 11px JetBrains Mono, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const label = isSentinel ? (n.val === NEG_INF ? '−∞' : '+∞') : String(n.val);
+  ctx.fillText(label, x + NODE_W / 2, y);
+}
+
+function edgeColor(a, b, lvl) {
+  const aState = nodeState(a, lvl);
+  const bState = nodeState(b, lvl);
+  if (aState === 'move'    || bState === 'move')    return 'rgba(99,102,241,0.75)';
+  if (aState === 'cur'     || bState === 'cur')     return 'rgba(5,150,105,0.65)';
+  if (aState === 'peek'    || bState === 'peek')    return 'rgba(217,119,6,0.55)';
+  if (aState === 'result'  || bState === 'result')  return 'rgba(22,163,74,0.6)';
+  if (aState === 'visited' || bState === 'visited') return 'rgba(165,180,252,0.45)';
+  return 'rgba(180,194,210,0.5)';
+}
+
+function drawArrow(x1, y1, x2, y2, color, width) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+
+  // Arrow head
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const hs = 6;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - hs * Math.cos(angle - 0.4), y2 - hs * Math.sin(angle - 0.4));
+  ctx.lineTo(x2 - hs * Math.cos(angle + 0.4), y2 - hs * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ════════════════════════════════════════════════
+//  ANIMATED PATH HIGHLIGHT
+// ════════════════════════════════════════════════
+
+function animatePath(path, resultNodeRef, type) {
+  if (animTimer) clearTimeout(animTimer);
+  highlightedPath = [];
+  highlightedResult = null;
+  highlightType = type;
+  pathStep = 0;
+  animDone = false;
+
+  if (stepMode) {
+    // Load into pending state, let user step through
+    pendingPath = path;
+    pendingResult = resultNodeRef;
+    pendingType = type;
+    document.getElementById('btnNext').disabled = false;
+    document.getElementById('btnNext').textContent = '▶ Următor';
+    document.getElementById('btnReset').style.display = 'inline-block';
+    draw();
+    return;
+  }
+
+  const delay = Math.max(50, 400 / animSpeed);
+
+  function step() {
+    if (pathStep < path.length) {
+      highlightedPath.push(path[pathStep]);
+      pathStep++;
+      draw();
+      animTimer = setTimeout(step, delay);
+    } else {
+      highlightedResult = resultNodeRef;
+      draw();
+      animTimer = setTimeout(() => {
+        highlightedPath = [];
+        draw();
+        animTimer = setTimeout(() => {
+          highlightedResult = null;
+          draw();
+        }, 800);
+      }, 1200);
+    }
+  }
+
+  step();
+}
+
+// ════════════════════════════════════════════════
+//  OPERATIONS
+// ════════════════════════════════════════════════
+
+function doInsert() {
+  const v = parseInt(document.getElementById('insertVal').value);
+  if (isNaN(v)) { logMsg('Introduceți un număr valid', 'info'); return; }
+  const res = sl.insert(v);
+  opCount++;
+  if (res.inserted) {
+    logMsg(`Inserat ${v}  [promovat la nivelul ${res.level}]`, 'insert');
+    animatePath(res.path, res.node, 'insert');
+  } else {
+    logMsg(`${v} există deja — ignorat`, 'info');
+  }
+  updateInfo(res.comparisons);
+  document.getElementById('insertVal').value = '';
+}
+
+function doSearch() {
+  const v = parseInt(document.getElementById('searchVal').value);
+  if (isNaN(v)) { logMsg('Introduceți un număr valid', 'info'); return; }
+  const res = sl.search(v);
+  opCount++;
+  if (res.found) {
+    logMsg(`Găsit ${v}  [${res.comparisons} comparații]`, 'found');
+    animatePath(res.path, res.node, 'search');
+  } else {
+    logMsg(`${v} negăsit  [${res.comparisons} comparații]`, 'notfound');
+    animatePath(res.path, null, 'search');
+  }
+  updateInfo(res.comparisons);
+  document.getElementById('searchVal').value = '';
+}
+
+function doDelete() {
+  const v = parseInt(document.getElementById('deleteVal').value);
+  if (isNaN(v)) { logMsg('Introduceți un număr valid', 'info'); return; }
+  const res = sl.delete(v);
+  opCount++;
+  if (res.deleted) {
+    logMsg(`Șters ${v}`, 'delete');
+    animatePath(res.path, null, 'delete');
+    setTimeout(draw, 800);
+  } else {
+    logMsg(`${v} negăsit — nimic șters`, 'info');
+  }
+  updateInfo(res.comparisons);
+  document.getElementById('deleteVal').value = '';
+}
+
+function insertRandom() {
+  const v = Math.floor(Math.random() * 200);
+  document.getElementById('insertVal').value = v;
+  doInsert();
+}
+
+function insertBulk() {
+  for (let i = 0; i < 10; i++) {
+    const v = Math.floor(Math.random() * 200);
+    sl.insert(v);
+    opCount++;
+  }
+  logMsg('Inserate 10 valori aleatoare', 'insert');
+  highlightedPath = []; highlightedResult = null;
+  draw();
+  updateInfo(null);
+}
+
+function insertSorted() {
+  const arr = [];
+  const start = Math.floor(Math.random() * 100);
+  for (let i = 0; i < 10; i++) {
+    const v = start + i * 5;
+    if (sl.insert(v).inserted) arr.push(v);
+    opCount++;
+  }
+  logMsg(`Inserare sortată: ${arr.join(', ')}`, 'insert');
+  highlightedPath = []; highlightedResult = null;
+  draw();
+  updateInfo(null);
+}
+
+function clearAll() {
+  sl = new SkipList(sl.p);
+  opCount++;
+  highlightedPath = []; highlightedResult = null;
+  logMsg('Skip list golit', 'info');
+  draw();
+  updateInfo(null);
+}
+
+// ════════════════════════════════════════════════
+//  UI UPDATES
+// ════════════════════════════════════════════════
+
+function updateStats() {
+  document.getElementById('statNoduri').textContent  = sl.size;
+  document.getElementById('statNiveluri').textContent = sl.maxLevel + 1;
+  document.getElementById('statOps').textContent    = opCount;
+}
+
+function updateInfo(comps) {
+  document.getElementById('infoMaxNiveluri').textContent = sl.maxLevel + 1;
+  document.getElementById('infoCurNiveluri').textContent = sl.maxLevel + 1;
+  document.getElementById('infoNoduri').textContent     = sl.size;
+  if (comps !== null && comps !== undefined) {
+    document.getElementById('infoComps').textContent = comps;
+  }
+}
+
+function logMsg(msg, type) {
+  const body = document.getElementById('logBody');
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const el = document.createElement('div');
+  el.className = `log-entry log-${type}`;
+  el.innerHTML = `<span class="log-time">${ts}</span><span>${msg}</span>`;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+
+  // Keep max 100 entries
+  while (body.children.length > 100) body.removeChild(body.firstChild);
+}
+
+function clearLog() {
+  document.getElementById('logBody').innerHTML = '';
+}
+
+function updateSpeed(val) {
+  animSpeed = parseInt(val);
+  document.getElementById('speedLabel').textContent = val + '×';
+}
+
+function updateProb(val) {
+  const p = val / 100;
+  sl.p = p;
+  document.getElementById('probLabel').textContent = p.toFixed(2);
+}
+
+// ════════════════════════════════════════════════
+//  EXPORT / IMPORT
+// ════════════════════════════════════════════════
+
+function exportJSON() {
+  const data = JSON.stringify(sl.serialize(), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'skiplist.json';
+  a.click();
+  logMsg('Exportat în JSON', 'info');
+}
+
+function importJSON() {
+  document.getElementById('importFile').click();
+}
+
+function handleImport(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      sl = new SkipList(data.p || 0.5);
+      (data.values || []).forEach(v => sl.insert(v));
+      logMsg(`Importate ${sl.size} valori din JSON`, 'info');
+      highlightedPath = []; highlightedResult = null;
+      draw();
+      updateInfo(null);
+      document.getElementById('probRange').value = Math.round((data.p || 0.5) * 100);
+      document.getElementById('probLabel').textContent = (data.p || 0.5).toFixed(2);
+    } catch {
+      logMsg('Import eșuat — JSON invalid', 'notfound');
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function exportPNG() {
+  // Temporarily remove highlights for clean export
+  const savedPath = highlightedPath;
+  const savedResult = highlightedResult;
+  highlightedPath = []; highlightedResult = null;
+  draw();
+
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'skiplist.png';
+    a.click();
+    logMsg('Canvas exportat ca PNG', 'info');
+
+    // Restore
+    highlightedPath = savedPath;
+    highlightedResult = savedResult;
+    draw();
+  });
+}
+
+
+// ════════════════════════════════════════════════
+//  TIKZ EXPORT
+// ════════════════════════════════════════════════
+
+function generateTikZ() {
+  const totalLevels = sl.maxLevel + 1;
+
+  // Collect all nodes in order (including sentinels)
+  const nodes = [];
+  let cur = sl.head;
+  let idx = 0;
+  while (cur) {
+    nodes.push({ ref: cur, val: cur.val, levels: cur.forward.length, idx });
+    cur = cur.forward[0];
+    idx++;
+  }
+
+  const nodeW = 1.2;   // cm width per node
+  const nodeH = 0.6;   // cm height per node
+  const gapX  = 0.4;   // cm horizontal gap
+  const gapY  = 0.9;   // cm vertical gap between levels
+
+  // Node label helper
+  function label(v) {
+    if (v === -Infinity) return '$-\\infty$';
+    if (v ===  Infinity) return '$+\\infty$';
+    return String(v);
+  }
+
+  // Node id helper (safe for tikz)
+  function nid(idx, lvl) { return `n${idx}l${lvl}`; }
+
+  // x position of node i (center)
+  function nx(i) { return i * (nodeW + gapX); }
+  // y position of level lvl (level 0 at bottom)
+  function ny(lvl) { return lvl * gapY; }
+
+  let lines = [];
+  lines.push('% ── Skip List ─────────────────────────────────');
+  lines.push('% Generated by Skip List Visualizer');
+  lines.push('%');
+  lines.push('\\documentclass{standalone}');
+  lines.push('\\usepackage{tikz}');
+  lines.push('\\usepackage{amsmath}');
+  lines.push('\\usetikzlibrary{arrows.meta, positioning}');
+  lines.push('');
+  lines.push('\\begin{document}');
+  lines.push('\\begin{tikzpicture}[');
+  lines.push('  node distance=0pt,');
+  lines.push('  datanode/.style={rectangle, draw=cyan!60!black, fill=cyan!8, minimum width=' + nodeW + 'cm, minimum height=' + nodeH + 'cm, font=\\small\\ttfamily},');
+  lines.push('  sentinel/.style={rectangle, draw=orange!70!black, fill=orange!8, minimum width=' + nodeW + 'cm, minimum height=' + nodeH + 'cm, font=\\small\\ttfamily},');
+  lines.push('  >=Stealth');
+  lines.push(']');
+  lines.push('');
+
+  // Draw nodes
+  for (const n of nodes) {
+    const isSentinel = n.val === -Infinity || n.val === Infinity;
+    const style = isSentinel ? 'sentinel' : 'datanode';
+    const lbl = label(n.val);
+    const maxLvl = Math.min(n.levels, totalLevels);
+
+    for (let lvl = 0; lvl < maxLvl; lvl++) {
+      const x = nx(n.idx).toFixed(2);
+      const y = ny(lvl).toFixed(2);
+      lines.push(`  \\node[${style}] (${nid(n.idx, lvl)}) at (${x}, ${y}) {${lbl}};`);
+    }
+  }
+
+  lines.push('');
+
+  // Draw horizontal arrows at each level
+  for (let lvl = 0; lvl < totalLevels; lvl++) {
+    const atLevel = nodes.filter(n => n.levels > lvl);
+    for (let i = 0; i < atLevel.length - 1; i++) {
+      const a = atLevel[i];
+      const b = atLevel[i + 1];
+      lines.push(`  \\draw[->] (${nid(a.idx, lvl)}.east) -- (${nid(b.idx, lvl)}.west);`);
+    }
+  }
+
+  lines.push('');
+
+  // Draw vertical connectors within each node
+  for (const n of nodes) {
+    const maxLvl = Math.min(n.levels, totalLevels);
+    for (let lvl = 0; lvl < maxLvl - 1; lvl++) {
+      lines.push(`  \\draw[draw=cyan!30, dashed] (${nid(n.idx, lvl)}.north) -- (${nid(n.idx, lvl + 1)}.south);`);
+    }
+  }
+
+  lines.push('');
+
+  // Level labels on the left
+  for (let lvl = 0; lvl < totalLevels; lvl++) {
+    const y = ny(lvl).toFixed(2);
+    lines.push(`  \\node[left=6pt, font=\\scriptsize\\ttfamily, text=gray] at (0, ${y}) {L${lvl}};`);
+  }
+
+  lines.push('');
+  lines.push('\\end{tikzpicture}');
+  lines.push('\\end{document}');
+
+  return lines.join('\n');
+}
+
+function exportTikZ() {
+  const code = generateTikZ();
+  document.getElementById('tikzCode').value = code;
+  document.getElementById('tikzModalOverlay').classList.add('open');
+  logMsg('Cod TikZ generat', 'info');
+}
+
+function copyTikZ() {
+  const ta = document.getElementById('tikzCode');
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(() => {
+    logMsg('Cod TikZ copiat în clipboard', 'info');
+  }).catch(() => {
+    document.execCommand('copy');
+    logMsg('Cod TikZ copiat', 'info');
+  });
+}
+
+function downloadTikZ() {
+  const code = document.getElementById('tikzCode').value;
+  const blob = new Blob([code], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'skiplist.tex';
+  a.click();
+  logMsg('Fișier .tex descărcat', 'info');
+}
+
+function closeTikZModal() {
+  document.getElementById('tikzModalOverlay').classList.remove('open');
+}
+
+document.getElementById('tikzModalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('tikzModalOverlay')) closeTikZModal();
+});
+
+// ════════════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════════════
+
+function showInfo() {
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+// ════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'r' || e.key === 'R') insertRandom();
+  if (e.key === 'Escape') closeModal();
+});
+
+// Enter key on inputs
+['insertVal','searchVal','deleteVal'].forEach((id, i) => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') [doInsert, doSearch, doDelete][i]();
+  });
+});
+
+// ════════════════════════════════════════════════
+//  CANVAS TOOLTIP on hover
+// ════════════════════════════════════════════════
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = mx * scaleX;
+  const cy = my * scaleY;
+
+  const totalNiveluri = sl.maxLevel + 1;
+  const nodes = collectNoduri();
+  const tooltip = document.getElementById('tooltip');
+  let found = false;
+
+  for (const n of nodes) {
+    for (let lvl = 0; lvl < Math.min(n.levels, totalNiveluri); lvl++) {
+      const y = levelY(lvl, totalNiveluri);
+      if (cx >= n.x && cx <= n.x + NODE_W && cy >= y - NODE_H/2 && cy <= y + NODE_H/2) {
+        const label = n.val === NEG_INF ? '−∞ (head sentinel)' : n.val === POS_INF ? '+∞ (tail sentinel)' : `val: ${n.val}  |  levels: ${n.levels}`;
+        tooltip.textContent = label;
+        tooltip.style.left = (e.clientX + 12) + 'px';
+        tooltip.style.top  = (e.clientY - 8) + 'px';
+        tooltip.style.opacity = '1';
+        found = true;
+        break;
+      }
+    }
+    if (found) break;
+  }
+
+  if (!found) tooltip.style.opacity = '0';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  document.getElementById('tooltip').style.opacity = '0';
+});
+
+// ════════════════════════════════════════════════
+//  RESIZE
+// ════════════════════════════════════════════════
+
+window.addEventListener('resize', () => draw());
+
+// ════════════════════════════════════════════════
+//  INIT — seed with demo data
+// ════════════════════════════════════════════════
+
+[12, 24, 37, 45, 58, 63, 77, 91].forEach(v => sl.insert(v));
+logMsg('Skip List inițializat cu date demo', 'info');
+logMsg('Apasă R pentru inserare aleatoare | Enter funcționează pe câmpuri', 'info');
+draw();
+updateInfo(null);
+</script>
+
+</body>
